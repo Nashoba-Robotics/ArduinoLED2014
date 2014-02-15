@@ -51,6 +51,7 @@ rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
 }
 
 void setup() {
+  Serial.begin(9600);
   Ethernet.begin(mac, ip);
   Udp.begin(localPort);
   for(uint16_t i = 0; i < LED_COUNT; i++) {
@@ -62,6 +63,7 @@ void setup() {
 void loop() {
   int packetSize = Udp.parsePacket();
   if(packetSize) {
+    Serial.println("Received Packet");
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
     pbs = String(packetBuffer);
     procInput(pbs);
@@ -93,7 +95,7 @@ void procCmd(int cmd, int data) {
       }
       for(uint16_t i = 0; i < LED_COUNT; i++) {
         if(i < w) {
-          colors[i] = rgbColor(84, 255, 0);//used to use hsvToRgb
+          colors[i] = rgbColor(84, 255, 0);
         } else {
           colors[i] = rgbColor(0, 0, 0);
         }
