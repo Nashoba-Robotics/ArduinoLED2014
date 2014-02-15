@@ -10,7 +10,11 @@ in this project, then add the "PololuLedStrip" library.
 
 #define LED_COUNT 60
 #define CMD_SET 0
-#define CMD_PATTERN 1
+#define CMD_PTRN 1//<-- NOT FINISHED
+
+#define PTRN_RAINBOW 0//<-- NOT FINISHED
+#define PTRN_LRBOUNCE 1//<-- NOT FINISHED
+#define PTRN_INOUTBOUNCE 2//<-- NOT FINISHED
 
 PololuLedStrip<3> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
@@ -50,9 +54,8 @@ void setup() {
   Ethernet.begin(mac, ip);
   Udp.begin(localPort);
   for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = hsvToRgb(100, 255, 255);
+    colors[i] = rgbColor(84, 255, 0);
   }
-  ledStrip.write(colors, LED_COUNT);
   delay(10);
 }
 
@@ -88,6 +91,15 @@ void procCmd(int cmd, int data) {
       } else if(w >= LED_COUNT) {
         w = LED_COUNT;
       }
+      for(uint16_t i = 0; i < LED_COUNT; i++) {
+        if(i < w) {
+          colors[i] = rgbColor(84, 255, 0);//used to use hsvToRgb
+        } else {
+          colors[i] = rgbColor(0, 0, 0);
+        }
+      }
+      break;
+    case CMD_PTRN:
       break;
   }
 }
@@ -103,12 +115,5 @@ int dataFromString(String input) {
 }
 
 void updateLED() {
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    if(i < w) {
-      colors[i] = rgbColor(84, 255, 0);//used to use hsvToRgb
-    } else {
-      colors[i] = rgbColor(0, 0, 0);
-    }
-  }
   ledStrip.write(colors, LED_COUNT);
 }

@@ -15,7 +15,11 @@ int dWidth = 480, dHeight = 320;
 UDP udp;
 
 int CMD_SET = 0;//send a command tag with goal of setting a specific light amount (0 - 60 as data input)
-int CMD_PATTERN = 1;//send a command tag with goal of setting a led pattern (? - ? as data input) <-- NOT FINISHED
+int CMD_PTRN = 1;//send a command tag with goal of setting a led pattern (? - ? as data input) <-- NOT FINISHED
+
+int PTRN_RAINBOW = 0;//rainbow pattern <-- NOT FINISHED
+int PTRN_LRBOUNCE = 1;//left to right bounce pattern <-- NOT FINISHED
+int PTRN_INOUTBOUNCE = 2;//inwards to outwards bounce pattern <-- NOT FINISHED
 
 void setup() {
   size(dWidth, dHeight);
