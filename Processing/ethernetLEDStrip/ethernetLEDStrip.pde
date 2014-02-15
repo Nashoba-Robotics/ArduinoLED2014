@@ -2,11 +2,6 @@
 READ ME!!! ---> THIS IS VERY IMPORTANT
   You must click "Sketch" then "Import Library" then "add library"
   in the window that opened, you must install UDP
-
-WARNING ---> I (jtaylorchang) did not have an Arduino nor an LED strip with me at the time
-  that I am writing this code. Therefore I must provide warning that this code is not tested
-  and should be used at your own risk, not that there is much of a risk. Possible threat of
-  bugs in current version
 */
 import hypermedia.net.*;
 
@@ -34,25 +29,34 @@ void draw() {
 
 void keyPressed() {
   switch(key) {//NOTE: easily optimizable by converting string to integer and then multiplying by 10 to get data input
-    case '0':
-      command(CMD_SET, 0);
-      break;
     case '1':
-      command(CMD_SET, 10);
+      command(CMD_SET, 9);
       break;
     case '2':
-      command(CMD_SET, 20);
+      command(CMD_SET, 12);
       break;
     case '3':
-      command(CMD_SET, 30);
+      command(CMD_SET, 18);
       break;
     case '4':
-      command(CMD_SET, 40);
+      command(CMD_SET, 24);
       break;
     case '5':
-      command(CMD_SET, 50);
+      command(CMD_SET, 30);
       break;
     case '6':
+      command(CMD_SET, 36);
+      break;
+    case '7':
+      command(CMD_SET, 42);
+      break;
+    case '8':
+      command(CMD_SET, 48);
+      break;
+    case '9':
+      command(CMD_SET, 54);
+      break;
+    case '0':
       command(CMD_SET, 60);
       break;
   }
