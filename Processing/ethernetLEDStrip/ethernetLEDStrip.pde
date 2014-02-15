@@ -30,7 +30,7 @@ void draw() {
 void keyPressed() {
   switch(key) {//NOTE: easily optimizable by converting string to integer and then multiplying by 10 to get data input
     case '1':
-      command(CMD_SET, 9);
+      command(CMD_SET, 6);//This errors. It's an ethernet problem.
       break;
     case '2':
       command(CMD_SET, 12);
