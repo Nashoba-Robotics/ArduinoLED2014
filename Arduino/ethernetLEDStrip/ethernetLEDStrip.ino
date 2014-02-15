@@ -18,6 +18,8 @@ in this project, then add the "PololuLedStrip" library.
 
 PololuLedStrip<38> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
+rgb_color blank[LED_COUNT];
+
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 1, 177);
 unsigned int localPort = 8888;
@@ -51,6 +53,10 @@ rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
 }
 
 void setup() {
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    blank[i] = rgbColor(0, 0, 0);
+  }
+  ledStrip.write(blank, LED_COUNT);
   Serial.begin(9600);
   Ethernet.begin(mac, ip);
   Udp.begin(localPort);
