@@ -15,19 +15,20 @@
 #define PTRN_LRBOUNCE 1//<-- NOT FINISHED
 #define PTRN_INOUTBOUNCE 2//<-- NOT FINISHED
 
-PololuLedStrip<38> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
+PololuLedStrip<6> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
 rgb_color blank[LED_COUNT];
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-byte ip[] = { 192, 168, 1, 177 };
+IPAddress ip(10, 17, 68, 12);
 unsigned int localPort = 8888;
-EthernetServer server = EthernetServer(localPort);
+EthernetServer server(localPort);
 int w = LED_COUNT;
 String input = "";
 int pbCmd = -1;
 int pbData = -1;
 String delimiter = " ";
+String seperator = ":";
 String inputString;
 
 EthernetClient client;
@@ -91,70 +92,58 @@ void setup() {
   Serial.println("Listening for clients");
 
   for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(84, 255, 0);
+    colors[i] = rgbColor(255, 255, 0);
   }
   delay(10);
 }
 
 void loop() {
   client = server.available();
-  char inputCharArray[20];
-  if (client == true) {
-    Serial.println("Received Packet");
+  char inputCharArray[100];
+  if (client) {
     int i = 0;
     while(client.available() > 0){
       inputCharArray[i] = client.read();
       i++;
     }
-    for(int j = 0; j < 20; j++)
-    {
-       inputString.setCharAt(j, inputCharArray[j]);
-    }
+    inputString = String(inputCharArray);
+    Serial.print("Received: ");
+    Serial.println(inputCharArray);
     procInput(inputString);
     updateLED();
   }
   else 
   {
-    Serial.println("Disconnected.");
-    client.stop();
-    for(;;)
-      ;
   }
-
-  delay(20);
 }
 
 void procInput(String input) {
   pbCmd = cmdFromString(inputString);
   pbData = dataFromString(inputString);
   procCmd(pbCmd, pbData);
-  client.println("Command received: ");
-  client.println(pbCmd);
-  client.println("Data received: ");
-  client.println(pbData);
+  Serial.print("Command received: ");
+  Serial.println(pbCmd);
+  Serial.print("Data received: ");
+  Serial.println(pbData);
 }
 
 void procCmd(int cmd, int data) {
   switch(cmd) {
   case CMD_SET:
-    w = data;
-    if(w < 0) {
-      w = 0;
-    } 
-    else if(w >= LED_COUNT) {
-      w = LED_COUNT;
-    }
-    for(uint16_t i = 0; i < LED_COUNT; i++) {
-      if(i < w) {
-        colors[i] = rgbColor(84, 255, 0);
-      } 
-      else {
-        colors[i] = rgbColor(0, 0, 0);
-      }
-    }
+    setLED(0, data, rgbColor(255,0,255));
     break;
   case CMD_PTRN:
     break;
+  }
+}
+
+void rainbow()
+{
+  uint16_t time = millis() >> 2;
+  for(uint16_t i = 0; i < LED_COUNT; i++)
+  {
+    byte x = (time >> 2) - (i << 3);
+    colors[i] = hsvToRgb((uint32_t)x * 359 / 256, 255, 255);
   }
 }
 
@@ -166,6 +155,20 @@ int cmdFromString(String input) {
 int dataFromString(String input) {
   String data = input.substring(input.indexOf(delimiter) + 1, input.length());
   return data.toInt();
+}
+
+void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    colors[i] = rgbColor(0, 0, 0);
+  }
+  for(uint16_t i = startPosition; i < endPosition; i++) {
+    if(i < w) {
+      colors[i] = rgbcolor;
+    } 
+    else {
+      colors[i] = rgbColor(0, 0, 0);
+    }
+  }
 }
 
 void updateLED() {
