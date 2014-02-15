@@ -16,7 +16,7 @@ in this project, then add the "PololuLedStrip" library.
 #define PTRN_LRBOUNCE 1//<-- NOT FINISHED
 #define PTRN_INOUTBOUNCE 2//<-- NOT FINISHED
 
-PololuLedStrip<3> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
+PololuLedStrip<38> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 1, 177);
