@@ -8,16 +8,22 @@ in this project, then add the "PololuLedStrip" library.
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
-PololuLedStrip<3> ledStrip;//6 on reg, 3 on mega
 #define LED_COUNT 60
+#define CMD_SET 0
+#define CMD_PATTERN 1
+
+PololuLedStrip<3> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 1, 177);
 unsigned int localPort = 8888;
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
-char replyBuffer[] = "acknowledged";
 EthernetUDP Udp;
-int w = 60;
+int w = LED_COUNT;
+String pbs = "";
+int pbCmd = -1;
+int pbData = -1;
+String delimiter = " ";
 
 rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
   uint8_t f = (h % 60) * 255 / 60;
@@ -36,6 +42,10 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
   return (rgb_color) {r, g, b};
 }
 
+rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
+  return (rgb_color) {r, g, b};
+}
+
 void setup() {
   Ethernet.begin(mac, ip);
   Udp.begin(localPort);
@@ -43,33 +53,62 @@ void setup() {
     colors[i] = hsvToRgb(100, 255, 255);
   }
   ledStrip.write(colors, LED_COUNT);
-  delay(50);
+  delay(10);
 }
 
 void loop() {
   int packetSize = Udp.parsePacket();
   if(packetSize) {
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-    String pbs(packetBuffer);
-    int pbi = pbs.toInt();
-    w = pbi;
-    if(w < 0) {
-      w = 0;
-    } else if(w >= LED_COUNT) {
-      w = LED_COUNT;
-    }
-    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-    Udp.write("Setting to: ");
-    Udp.write(packetBuffer);
-    Udp.endPacket();
-    for(uint16_t i = 0; i < LED_COUNT; i++) {
-      if(i < w) {
-        colors[i] = hsvToRgb(100, 255, 255);
-      } else {
-        colors[i] = hsvToRgb(0, 0, 0);
-      }
-    }
-    ledStrip.write(colors, LED_COUNT);
+    pbs = String(packetBuffer);
+    procInput(pbs);
+    updateLED();
   }
   delay(20);
+}
+
+void procInput(String input) {
+  pbCmd = cmdFromString(pbs);
+  pbData = dataFromString(pbs);
+  procCmd(pbCmd, pbData);
+  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+  Udp.write("Command received: ");
+  Udp.write(pbCmd);
+  Udp.write("Data received: ");
+  Udp.write(pbData);
+  Udp.endPacket();
+}
+
+void procCmd(int cmd, int data) {
+  switch(cmd) {
+    case CMD_SET:
+      w = data;
+      if(w < 0) {
+        w = 0;
+      } else if(w >= LED_COUNT) {
+        w = LED_COUNT;
+      }
+      break;
+  }
+}
+
+int cmdFromString(String input) {
+  String cmd = input.substring(0, input.indexOf(delimiter));
+  return cmd.toInt();
+}
+
+int dataFromString(String input) {
+  String data = input.substring(input.indexOf(delimiter) + 1, input.length());
+  return data.toInt();
+}
+
+void updateLED() {
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    if(i < w) {
+      colors[i] = rgbColor(84, 255, 0);//used to use hsvToRgb
+    } else {
+      colors[i] = rgbColor(0, 0, 0);
+    }
+  }
+  ledStrip.write(colors, LED_COUNT);
 }
