@@ -26,7 +26,8 @@ EthernetServer server(localPort);
 int w = LED_COUNT;
 String input = "";
 int pbCmd = -1;
-int pbData = -1;
+int pbData1 = -1;
+int pbData2 = -1;
 String delimiter = " ";
 String seperator = ":";
 String inputString;
@@ -107,7 +108,7 @@ void loop() {
       i++;
     }
     inputString = String(inputCharArray);
-    Serial.print("Received: ");
+    //Serial.print("Received: ");
     Serial.println(inputCharArray);
     procInput(inputString);
     updateLED();
@@ -119,31 +120,36 @@ void loop() {
 
 void procInput(String input) {
   pbCmd = cmdFromString(inputString);
-  pbData = dataFromString(inputString);
-  procCmd(pbCmd, pbData);
-  Serial.print("Command received: ");
+  pbData1 = data1FromString(inputString);
+  pbData2 = data2FromString(inputString);
+  procCmd(pbCmd, pbData1, pbData2);
+  /*Serial.print("Command received: ");
   Serial.println(pbCmd);
   Serial.print("Data received: ");
-  Serial.println(pbData);
+  Serial.println(pbData);*/
 }
 
-void procCmd(int cmd, int data) {
+void procCmd(int cmd, int data1, int data2) {
   switch(cmd) {
   case CMD_SET:
-    setLED(0, data, rgbColor(255,0,255));
+    setLED(data1, data2, rgbColor(255,0,255));
     break;
   case CMD_PTRN:
+    rainbow(data1, data2);
     break;
   }
 }
 
-void rainbow()
+void rainbow(int data1, int numberOfLoops)
 {
+  for(int j = 0; j < numberOfLoops; j++){
   uint16_t time = millis() >> 2;
   for(uint16_t i = 0; i < LED_COUNT; i++)
   {
     byte x = (time >> 2) - (i << 3);
     colors[i] = hsvToRgb((uint32_t)x * 359 / 256, 255, 255);
+  }
+  updateLED();
   }
 }
 
@@ -152,8 +158,13 @@ int cmdFromString(String input) {
   return cmd.toInt();
 }
 
-int dataFromString(String input) {
-  String data = input.substring(input.indexOf(delimiter) + 1, input.length());
+int data1FromString(String input) {
+  String data = input.substring(input.indexOf(delimiter) + 1, input.indexOf(seperator));
+  return data.toInt();
+}
+
+int data2FromString(String input) {
+  String data = input.substring(input.indexOf(seperator) + 1, input.length());
   return data.toInt();
 }
 
