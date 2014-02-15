@@ -1,3 +1,7 @@
+/* READ ME!!! ---> THIS IS VERY IMPORTANT
+you must click "Sketch" then "Import Library" then "add library"
+in the window that opened, you must install UDP
+*/
 import hypermedia.net.*;
 
 UDP udp;
