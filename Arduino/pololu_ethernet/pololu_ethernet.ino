@@ -1,3 +1,8 @@
+/* READ ME!!! ---> THIS IS VERY IMPORTANT
+you must click "Sketch" then "Import Library" then "add library"
+in the window that opened, you must navigate to the "lib" directory
+in this project, then add the "PololuLedStrip" library.
+*/
 #include <PololuLedStrip.h>
 #include <SPI.h>
 #include <Ethernet.h>
