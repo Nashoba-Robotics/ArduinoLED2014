@@ -21,7 +21,7 @@ rgb_color colors[LED_COUNT];
 rgb_color blank[LED_COUNT];
 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-IPAddress ip(192, 168, 1, 177);
+IPAddress ip(10, 17, 68, 12);
 unsigned int localPort = 8888;
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 EthernetUDP Udp;
