@@ -14,7 +14,7 @@
 
 #define PTRN_RAINBOW 0
 #define PTRN_GRADIENT 1
-#define PTRN_LRBOUNCE 2//<-- NOT FINISHED
+#define PTRN_LRBOUNCE 2
 #define PTRN_INOUTBOUNCE 3//<-- NOT FINISHED
 
 PololuLedStrip<6> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
