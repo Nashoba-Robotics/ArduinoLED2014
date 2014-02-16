@@ -15,7 +15,8 @@
 #define PTRN_RAINBOW 0
 #define PTRN_GRADIENT 1
 #define PTRN_LRBOUNCE 2
-#define PTRN_INOUTBOUNCE 3//<-- NOT FINISHED
+#define PTRN_INOUTBOUNCE 3
+#define PTRN_LOADING 4
 
 PololuLedStrip<6> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
@@ -27,6 +28,7 @@ byte mac[] = {
 IPAddress ip(10, 17, 68, 12);
 unsigned int localPort = 8888;
 EthernetServer server(localPort);
+EthernetClient client;
 
 //Communication stuff:
 String input = "";
@@ -41,18 +43,18 @@ String delimiter3 = "-";
 String inputString;
 
 //State stuff:
-String state = "inoutbounce";
+String state = "loading";
 rgb_color color = rgbColor(255,255,255);
 
 //Moving pattern stuff:
-int moveSpeed = 1;
+int moveSpeed = 5;
 
 //Set stuff:
 int startPosition = 10;
 int endPosition = 60;
 
 //Bounce stuff:
-int bouncePosition = 0;
+int bouncePosition = 30;
 int length = 10;
 boolean bounceDirection = true;
 
@@ -73,7 +75,9 @@ float gradChange2[3] = {
   (float) (grad100[0] - grad50[0]) / LED_COUNT, (float) (grad100[1] - grad50[1]) / LED_COUNT, (float) (grad100[2] - grad50[2]) / LED_COUNT
 };
 
-EthernetClient client;
+//Loading Bar stuff:
+int progress = 0;
+
 
 rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
   uint8_t f = (h % 60) * 255 / 60;
@@ -114,12 +118,12 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b                                                                                 };
+    r, g, b                                                                                       };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                                                                                        };
+    r, g, b                                                                                              };
 }
 
 void setup() {
@@ -175,6 +179,12 @@ void loop() {
             {
               inOutBounce();
             }
+            else{
+              if(state == "loading")
+              {
+                loading();
+              }
+            }
           }
         }
       }
@@ -227,6 +237,13 @@ void procCmd(int cmd, int data1, int data2, int data3) {
           if(data1 == PTRN_INOUTBOUNCE)
           {
             state = "intoutbounce";
+          }
+          else{
+            if(data1 == PTRN_LOADING)
+            {
+              state = "loading";
+              progress = data2;
+            }
           }
         }
       }
@@ -281,13 +298,11 @@ void leftRightBounce()
   if(bounceDirection)
   {
     bouncePosition++;
-    Serial.println(bouncePosition);
   }
   else  {
     bouncePosition--;
-    Serial.println(bouncePosition);
-
   }
+  delay(20);
 }
 
 void inOutBounce() {
@@ -297,7 +312,7 @@ void inOutBounce() {
   for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
     colors[i] = rgbColor(255,255,255);
     if(i >= 60){
-    colors[i-LED_COUNT] = rgbColor(255,255,255);
+      colors[i-LED_COUNT] = rgbColor(255,255,255);
     }
   }
 
@@ -309,17 +324,22 @@ void inOutBounce() {
   delay(20);
 }
 
+void loading() {
+  setLED(0, progress, rgbColor(255,255,255));
+  progress++;
+  if(progress > 60)
+  {
+    progress = 0;
+  }
+  delay(20);
+}
+
 void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
   for(uint16_t i = 0; i < LED_COUNT; i++) {
     colors[i] = rgbColor(0, 0, 0);
   }
-  for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
-    if(i < LED_COUNT) {
-      colors[i] = rgbcolor;
-    } 
-    else {
-      colors[i] = rgbColor(0, 0, 0);
-    }
+  for(uint16_t i = startPosition; i < endPosition; i++) {
+    colors[i] = rgbcolor;
   }
 }
 
@@ -330,6 +350,5 @@ void updateLED() {
 void clearLED() {
   ledStrip.write(blank, LED_COUNT);
 }
-
 
 
