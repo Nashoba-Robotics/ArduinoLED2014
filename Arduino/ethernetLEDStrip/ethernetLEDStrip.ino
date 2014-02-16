@@ -41,25 +41,30 @@ String delimiter3 = "-";
 String inputString;
 
 //State stuff:
-String state = "rainbow";
+String state = "lrbounce";
 
 //Moving pattern stuff:
-int moveSpeed = 10;
+int moveSpeed = 1;
 
 //Set stuff:
-int startPosition = 0;
-int endPosition = LED_COUNT;
+int startPosition = 10;
+int endPosition = 60;
 rgb_color color = rgbColor(255,255,255);
+
+//Bounce stuff:
+int bouncePosition = 30;
+int length = 10;
+boolean bounceDirection = true;
 
 //Gradient stuff:
 int grad0[3] = {//start color
-  255, 25, 25
+  255, 255, 0
 };
 int grad50[3] = {//middle color
-  255, 255, 25
+  255, 0, 255
 };
 int grad100[3] = {//end color
-  25, 255, 25
+  0, 255, 255
 };
 float gradChange1[3] = {
   (float) (grad50[0] - grad0[0]) / LED_COUNT, (float) (grad50[1] - grad0[1]) / LED_COUNT, (float) (grad50[2] - grad0[2]) / LED_COUNT
@@ -109,27 +114,25 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b                                                               };
+    r, g, b                                                                   };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                                                                      };
+    r, g, b                                                                          };
 }
 
 void setup() {
   for(uint16_t i = 0; i < LED_COUNT; i++) {
     blank[i] = rgbColor(0, 0, 0);
   }
+  clearLED();
   Serial.begin(9600);
   Ethernet.begin(mac, ip);
   server.begin();
 
   Serial.println("Listening for clients");
 
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(255, 255, 0);
-  }
   delay(10);
 }
 
@@ -148,7 +151,7 @@ void loop() {
     setLED(0, LED_COUNT, rgbColor(0, 0, 0));
   }  
   else{
-    if(state == "on")
+    if(state == "set")
     {
       setLED(startPosition, endPosition, color);
     }  
@@ -161,6 +164,12 @@ void loop() {
         if(state == "gradient")
         {
           gradient();
+        }
+        else{
+          if(state == "lrbounce")
+          {
+            leftRightBounce();
+          }
         }
       }
     }
@@ -189,7 +198,7 @@ void procCmd(int cmd, int data1, int data2, int data3) {
     startPosition = data1;
     endPosition = data2;
     color = rgbColor(255,0,255);
-    state = "on";
+    state = "set";
     break;
   case CMD_PTRN:
     if(data1 == PTRN_RAINBOW)
@@ -221,18 +230,50 @@ void rainbow()
 
 void gradient()
 {
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    colors[i] = rgbColor(0, 0, 0);
+  }
   for(uint16_t i = startPosition; i < endPosition; i++) {
     if(i < LED_COUNT) {
-      if(i < LED_COUNT / 2) {
+      if(i < endPosition / 2) {
         colors[i] = rgbColor((int) (grad0[0] + i * gradChange1[0] * 2), (int) (grad0[1] + i * gradChange1[1] * 2), (int) (grad0[2] + i * gradChange1[2] * 2));
       } 
-      else if(i >= LED_COUNT / 2) {
-        colors[i] = rgbColor((int) (grad50[0] + (i - LED_COUNT / 2) * gradChange2[0] * 2), (int) (grad50[1] + (i - LED_COUNT / 2) * gradChange2[1] * 2), (int) (grad50[2] + (i - LED_COUNT / 2) * gradChange2[2] * 2));
+      else if(i >= endPosition / 2) {
+        colors[i] = rgbColor((int) (grad50[0] + (i - endPosition / 2) * gradChange2[0] * 2), (int) (grad50[1] + (i - endPosition / 2) * gradChange2[1] * 2), (int) (grad50[2] + (i - endPosition / 2) * gradChange2[2] * 2));
       }
     } 
-    else {
-      colors[i] = rgbColor(0, 0, 0);
-    }
+  }
+}
+
+void leftRightBounce()
+{
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    colors[i] = rgbColor(0, 0, 0);
+  }
+  for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
+    colors[i] = rgbColor(255,255,255);
+  }
+  if(bouncePosition + length == LED_COUNT)
+  {
+    bounceDirection = !bounceDirection;
+    Serial.println("bounce far!");
+  }
+  if(bouncePosition == 0)
+  {
+    bounceDirection = !bounceDirection;
+    Serial.println("bounce close!");
+  }
+  if(bounceDirection)
+  {
+    bouncePosition++;
+    Serial.print("up");
+    Serial.println(bouncePosition);
+  }
+  else  {
+    bouncePosition--;
+    Serial.print("down");
+    Serial.println(bouncePosition);
+
   }
 }
 
@@ -240,7 +281,7 @@ void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
   for(uint16_t i = 0; i < LED_COUNT; i++) {
     colors[i] = rgbColor(0, 0, 0);
   }
-  for(uint16_t i = startPosition; i < endPosition; i++) {
+  for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
     if(i < LED_COUNT) {
       colors[i] = rgbcolor;
     } 
@@ -252,6 +293,10 @@ void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
 
 void updateLED() {
   ledStrip.write(colors, LED_COUNT);
+}
+
+void clearLED() {
+  ledStrip.write(blank, LED_COUNT);
 }
 
 
