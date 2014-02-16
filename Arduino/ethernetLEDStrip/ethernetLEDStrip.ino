@@ -42,6 +42,7 @@ String inputString;
 
 //State stuff:
 String state = "inoutbounce";
+rgb_color color = rgbColor(255,255,255);
 
 //Moving pattern stuff:
 int moveSpeed = 1;
@@ -49,7 +50,6 @@ int moveSpeed = 1;
 //Set stuff:
 int startPosition = 10;
 int endPosition = 60;
-rgb_color color = rgbColor(255,255,255);
 
 //Bounce stuff:
 int bouncePosition = 0;
@@ -203,7 +203,6 @@ void procCmd(int cmd, int data1, int data2, int data3) {
   case CMD_SET:
     startPosition = data1;
     endPosition = data2;
-    color = rgbColor(255,0,255);
     state = "set";
     break;
   case CMD_PTRN:
