@@ -41,7 +41,7 @@ String delimiter3 = "-";
 String inputString;
 
 //State stuff:
-String state = "lrbounce";
+String state = "inoutbounce";
 
 //Moving pattern stuff:
 int moveSpeed = 1;
@@ -52,7 +52,7 @@ int endPosition = 60;
 rgb_color color = rgbColor(255,255,255);
 
 //Bounce stuff:
-int bouncePosition = 30;
+int bouncePosition = 0;
 int length = 10;
 boolean bounceDirection = true;
 
@@ -114,12 +114,12 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b                                                                   };
+    r, g, b                                                                                 };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                                                                          };
+    r, g, b                                                                                        };
 }
 
 void setup() {
@@ -170,6 +170,12 @@ void loop() {
           {
             leftRightBounce();
           }
+          else{
+            if(state == "inoutbounce")
+            {
+              inOutBounce();
+            }
+          }
         }
       }
     }
@@ -212,6 +218,18 @@ void procCmd(int cmd, int data1, int data2, int data3) {
         state = "gradient";
         startPosition = data2;
         endPosition = data3;
+      }
+      else{
+        if(data1 == PTRN_LRBOUNCE)
+        {
+          state = "lrbounce";
+        }
+        else{
+          if(data1 == PTRN_INOUTBOUNCE)
+          {
+            state = "intoutbounce";
+          }
+        }
       }
     }
     break;
@@ -256,25 +274,40 @@ void leftRightBounce()
   if(bouncePosition + length == LED_COUNT)
   {
     bounceDirection = !bounceDirection;
-    Serial.println("bounce far!");
   }
   if(bouncePosition == 0)
   {
     bounceDirection = !bounceDirection;
-    Serial.println("bounce close!");
   }
   if(bounceDirection)
   {
     bouncePosition++;
-    Serial.print("up");
     Serial.println(bouncePosition);
   }
   else  {
     bouncePosition--;
-    Serial.print("down");
     Serial.println(bouncePosition);
 
   }
+}
+
+void inOutBounce() {
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    colors[i] = rgbColor(0, 0, 0);
+  }
+  for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
+    colors[i] = rgbColor(255,255,255);
+    if(i >= 60){
+    colors[i-LED_COUNT] = rgbColor(255,255,255);
+    }
+  }
+
+  if(bouncePosition > LED_COUNT)
+  {
+    bouncePosition = bouncePosition - LED_COUNT;
+  }
+  bouncePosition++;
+  delay(20);
 }
 
 void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
@@ -298,5 +331,6 @@ void updateLED() {
 void clearLED() {
   ledStrip.write(blank, LED_COUNT);
 }
+
 
 
