@@ -13,32 +13,60 @@
 #define CMD_PTRN 2
 
 #define PTRN_RAINBOW 0
-#define PTRN_LRBOUNCE 1//<-- NOT FINISHED
-#define PTRN_INOUTBOUNCE 2//<-- NOT FINISHED
+#define PTRN_GRADIENT 1
+#define PTRN_LRBOUNCE 2//<-- NOT FINISHED
+#define PTRN_INOUTBOUNCE 3//<-- NOT FINISHED
 
 PololuLedStrip<6> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
 rgb_color blank[LED_COUNT];
 
+//Network stuff:
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 IPAddress ip(10, 17, 68, 12);
 unsigned int localPort = 8888;
 EthernetServer server(localPort);
-int w = LED_COUNT;
+
+//Communication stuff:
 String input = "";
 int pbCmd = -1;
 int pbData1 = -1;
 int pbData2 = -1;
-String delimiter = " ";
-String seperator = ":";
+int pbData3 = -1;
+String delimiter1 = " ";
+String delimiter2 = ":";
+String delimiter3 = "-";
+
 String inputString;
+
+//State stuff:
 String state = "rainbow";
+
+//Moving pattern stuff:
 int moveSpeed = 10;
 
+//Set stuff:
 int startPosition = 0;
 int endPosition = LED_COUNT;
 rgb_color color = rgbColor(255,255,255);
+
+//Gradient stuff:
+int grad0[3] = {//start color
+  255, 25, 25
+};
+int grad50[3] = {//middle color
+  255, 255, 25
+};
+int grad100[3] = {//end color
+  25, 255, 25
+};
+float gradChange1[3] = {
+  (float) (grad50[0] - grad0[0]) / LED_COUNT, (float) (grad50[1] - grad0[1]) / LED_COUNT, (float) (grad50[2] - grad0[2]) / LED_COUNT
+};
+float gradChange2[3] = {
+  (float) (grad100[0] - grad50[0]) / LED_COUNT, (float) (grad100[1] - grad50[1]) / LED_COUNT, (float) (grad100[2] - grad50[2]) / LED_COUNT
+};
 
 EthernetClient client;
 
@@ -81,12 +109,12 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b               };
+    r, g, b                                                               };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                      };
+    r, g, b                                                                      };
 }
 
 void setup() {
@@ -109,27 +137,34 @@ void loop() {
   client = server.available();
   if (client) {
     String inputString = communicate();
-    pbCmd = inputString.substring(0, input.indexOf(delimiter)).toInt();
-    pbData1 = inputString.substring(input.indexOf(delimiter) + 1, input.indexOf(seperator)).toInt();
-    pbData2 = inputString.substring(input.indexOf(seperator) + 1, input.length()).toInt();
-    procCmd(pbCmd, pbData1, pbData2);
+    pbCmd = inputString.substring(0, input.indexOf(delimiter1)).toInt();
+    pbData1 = inputString.substring(input.indexOf(delimiter1) + 1, input.indexOf(delimiter2)).toInt();
+    pbData2 = inputString.substring(input.indexOf(delimiter2) + 1, input.indexOf(delimiter3)).toInt();
+    pbData3 = inputString.substring(input.indexOf(delimiter3) + 1, input.length()).toInt();
+    procCmd(pbCmd, pbData1, pbData2, pbData3);
   }
   if(state == "off")
   {
     setLED(0, LED_COUNT, rgbColor(0, 0, 0));
-  }
+  }  
   else{
-    if(state == "rainbow")
+    if(state == "on")
     {
-      rainbow();
-    }
+      setLED(startPosition, endPosition, color);
+    }  
     else{
-      if(state == "on")
+      if(state == "rainbow")
       {
-        setLED(startPosition, endPosition, color);
-      }  
+        rainbow();
+      }
+      else{
+        if(state == "gradient")
+        {
+          gradient();
+        }
+      }
     }
-  }
+  } 
   updateLED();
 }
 
@@ -146,7 +181,7 @@ String communicate() {
   return input;
 }
 
-void procCmd(int cmd, int data1, int data2) {
+void procCmd(int cmd, int data1, int data2, int data3) {
   switch(cmd) {
   case CMD_OFF:
     state = "off";
@@ -162,6 +197,14 @@ void procCmd(int cmd, int data1, int data2) {
       state = "rainbow";
       moveSpeed = data2;
     }
+    else{
+      if(data1 == PTRN_GRADIENT)
+      {
+        state = "gradient";
+        startPosition = data2;
+        endPosition = data3;
+      }
+    }
     break;
   }
 }
@@ -176,13 +219,29 @@ void rainbow()
   }
 }
 
+void gradient()
+{
+  for(uint16_t i = startPosition; i < endPosition; i++) {
+    if(i < LED_COUNT) {
+      if(i < LED_COUNT / 2) {
+        colors[i] = rgbColor((int) (grad0[0] + i * gradChange1[0] * 2), (int) (grad0[1] + i * gradChange1[1] * 2), (int) (grad0[2] + i * gradChange1[2] * 2));
+      } 
+      else if(i >= LED_COUNT / 2) {
+        colors[i] = rgbColor((int) (grad50[0] + (i - LED_COUNT / 2) * gradChange2[0] * 2), (int) (grad50[1] + (i - LED_COUNT / 2) * gradChange2[1] * 2), (int) (grad50[2] + (i - LED_COUNT / 2) * gradChange2[2] * 2));
+      }
+    } 
+    else {
+      colors[i] = rgbColor(0, 0, 0);
+    }
+  }
+}
 
 void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
   for(uint16_t i = 0; i < LED_COUNT; i++) {
     colors[i] = rgbColor(0, 0, 0);
   }
   for(uint16_t i = startPosition; i < endPosition; i++) {
-    if(i < w) {
+    if(i < LED_COUNT) {
       colors[i] = rgbcolor;
     } 
     else {
@@ -194,14 +253,5 @@ void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
 void updateLED() {
   ledStrip.write(colors, LED_COUNT);
 }
-
-
-
-
-
-
-
-
-
 
 
