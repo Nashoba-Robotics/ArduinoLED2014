@@ -17,6 +17,7 @@
 #define PTRN_LRBOUNCE 2
 #define PTRN_INOUTBOUNCE 3
 #define PTRN_LOADING 4
+#define PTRN_BOUNCE
 
 PololuLedStrip<3> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
@@ -44,7 +45,7 @@ String delimiter4 = "+";
 String inputString;
 
 //State stuff:
-String state = "lrbounce";
+String state = "bounce";
 rgb_color color = rgbColor(255,255,255);
 
 //Moving pattern stuff:
@@ -54,30 +55,45 @@ int moveSpeed = 5;
 int startPosition = 0;
 int endPosition = 60;
 
-//Bounce stuff:
+//In Out or Left Right Bounce stuff:
 int bouncePosition = 30;
 int length = 10;
 boolean bounceDirection = true;
 
 //Gradient stuff:
 int grad0[3] = {//start color
-  255, 255, 0
+  255, 0, 0
 };
 int grad50[3] = {//middle color
-  255, 0, 255
+  0, 255, 0
 };
 int grad100[3] = {//end color
-  0, 255, 255
+  0, 0, 255
 };
 float gradChange1[3] = {
-  (float) (grad50[0] - grad0[0]) / LED_COUNT, (float) (grad50[1] - grad0[1]) / LED_COUNT, (float) (grad50[2] - grad0[2]) / LED_COUNT
+  (float) (grad50[0] - grad0[0]) / LED_COUNT, 
+  (float) (grad50[1] - grad0[1]) / LED_COUNT, 
+  (float) (grad50[2] - grad0[2]) / LED_COUNT
 };
 float gradChange2[3] = {
-  (float) (grad100[0] - grad50[0]) / LED_COUNT, (float) (grad100[1] - grad50[1]) / LED_COUNT, (float) (grad100[2] - grad50[2]) / LED_COUNT
+  (float) (grad100[0] - grad50[0]) / LED_COUNT, 
+  (float) (grad100[1] - grad50[1]) / LED_COUNT, 
+  (float) (grad100[2] - grad50[2]) / LED_COUNT
 };
 
 //Loading Bar stuff:
 int progress = 0;
+
+//Bounce stuff:
+int bouncePositions[4] = {
+  5, 5, 5, 5};
+//False = closer, true = further
+boolean bounceDirections[4] = {
+  true, true, false, false};
+  
+  rgb_color bounceColors[4] = {
+    (rgb_color){255,0,0},(rgb_color){0,0,255},(rgb_color){0,255,0},(rgb_color){255,255,255}
+  };
 
 void setup() {
   for(uint16_t i = 0; i < LED_COUNT; i++) {
@@ -94,7 +110,9 @@ void setup() {
 }
 
 void loop() {
-  colors = blank;
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    colors[i] = rgbColor(0, 0, 0);
+  }
   client = server.available();
   if (client) {
     String inputString = communicate();
@@ -145,6 +163,12 @@ void loop() {
               if(state == "loading")
               {
                 loading();
+              }
+              else{
+                if(state == "bounce")
+                {
+                  bounce();
+                }
               }
             }
           }
@@ -234,13 +258,17 @@ void rainbow()
 
 void gradient()
 {
-  for(uint16_t i = startPosition; i < endPosition; i++) {
+  for(uint16_t i = startPosition; i < endPosition - startPosition; i++) {
     if(i < LED_COUNT) {
       if(i < endPosition / 2) {
-        colors[i] = rgbColor((int) (grad0[0] + i * gradChange1[0] * 2), (int) (grad0[1] + i * gradChange1[1] * 2), (int) (grad0[2] + i * gradChange1[2] * 2));
+        colors[i] = rgbColor((int) (grad0[0] + i * gradChange1[0] * 2), 
+        (int) (grad0[1] + i * gradChange1[1] * 2), 
+        (int) (grad0[2] + i * gradChange1[2] * 2));
       } 
       else if(i >= endPosition / 2) {
-        colors[i] = rgbColor((int) (grad50[0] + (i - endPosition / 2) * gradChange2[0] * 2), (int) (grad50[1] + (i - endPosition / 2) * gradChange2[1] * 2), (int) (grad50[2] + (i - endPosition / 2) * gradChange2[2] * 2));
+        colors[i] = rgbColor((int) (grad50[0] + (i - endPosition / 2) * gradChange2[0] * 2), 
+        (int) (grad50[1] + (i - endPosition / 2) * gradChange2[1] * 2), 
+        (int) (grad50[2] + (i - endPosition / 2) * gradChange2[2] * 2));
       }
     } 
   }
@@ -266,8 +294,6 @@ void leftRightBounce()
   else  {
     bouncePosition--;
   }
-  //delay((-((bouncePosition-(LED_COUNT/2))*(bouncePosition-(LED_COUNT/2)))/50)+18);
-  //delay((-((bouncePosition-(LED_COUNT)/2-(30-length)))*(bouncePosition))/18);
   delay(20);
 }
 
@@ -293,6 +319,47 @@ void loading() {
   if(progress > 60)
   {
     progress = 0;
+  }
+  delay(20);
+}
+
+void bounce(){
+  Serial.println("movement");
+  for(int i = 0; i < sizeof(bouncePositions)/sizeof(int); i++)
+  {
+    colors[bouncePositions[i]] = bounceColors[i];
+  }
+  for(int i = 0; i < sizeof(bouncePositions)/sizeof(int); i++)
+  {
+    if((bouncePositions[i] - 1) >= LED_COUNT)
+    {
+      bouncePositions[i] = 0;
+    }
+    if(bouncePositions[i] < 0)
+    {
+      bouncePositions[i] = LED_COUNT;
+    }
+    
+    if(bounceDirections[i])
+    {
+      bouncePositions[i]++;
+    }
+    else{
+      bouncePositions[i]--;
+    }
+    
+    for(int j = 0; j < sizeof(bouncePositions)/sizeof(int); j++)
+    {
+      if(i != j){
+      if(bouncePositions[i] == bouncePositions[j])
+      {
+        bounceDirections[i] = !bounceDirections[i];
+      }
+      }
+    }
+    Serial.print(i);
+    Serial.print(" ");
+    Serial.println(bouncePositions[i]);
   }
   delay(20);
 }
@@ -347,12 +414,14 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b                                                                                           };
+    r, g, b                                                                                               };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                                                                                                  };
+    r, g, b                                                                                                      };
 }
+
+
 
 
