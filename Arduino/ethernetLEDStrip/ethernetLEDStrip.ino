@@ -18,7 +18,7 @@
 #define PTRN_INOUTBOUNCE 3
 #define PTRN_LOADING 4
 
-PololuLedStrip<6> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
+PololuLedStrip<3> ledStrip;//<6> on UNO, Leonardo, and Duemilanove, <3> on Mega
 rgb_color colors[LED_COUNT];
 rgb_color blank[LED_COUNT];
 
@@ -38,12 +38,13 @@ int pbData2 = -1;
 int pbData3 = -1;
 String delimiter1 = " ";
 String delimiter2 = ":";
-String delimiter3 = "-";
+String delimiter3 = ";";
+String delimiter4 = "+";
 
 String inputString;
 
 //State stuff:
-String state = "rainbow";
+String state = "inoutbounce";
 rgb_color color = rgbColor(255,255,255);
 
 //Moving pattern stuff:
@@ -96,10 +97,18 @@ void loop() {
   client = server.available();
   if (client) {
     String inputString = communicate();
-    pbCmd = inputString.substring(0, input.indexOf(delimiter1)).toInt();
-    pbData1 = inputString.substring(input.indexOf(delimiter1) + 1, input.indexOf(delimiter2)).toInt();
-    pbData2 = inputString.substring(input.indexOf(delimiter2) + 1, input.indexOf(delimiter3)).toInt();
-    pbData3 = inputString.substring(input.indexOf(delimiter3) + 1, input.length()).toInt();
+    pbCmd = inputString.substring(0, inputString.indexOf(delimiter1)).toInt();
+    pbData1 = inputString.substring(inputString.indexOf(delimiter1) + 1, inputString.indexOf(delimiter2)).toInt();
+    pbData2 = inputString.substring(inputString.indexOf(delimiter2) + 1, inputString.indexOf(delimiter3)).toInt();
+    pbData3 = inputString.substring(inputString.indexOf(delimiter3) + 1, inputString.indexOf(delimiter4)).toInt();
+    Serial.print(pbCmd);
+    Serial.print(" ");
+    Serial.print(pbData1);
+    Serial.print(":");
+    Serial.print(pbData2);
+    Serial.print(";");
+    Serial.println(pbData3);
+    Serial.println(inputString.length());
     procCmd(pbCmd, pbData1, pbData2, pbData3);
   }
   if(state == "off")
@@ -145,19 +154,6 @@ void loop() {
   updateLED();
 }
 
-String communicate() {
-  char inputCharArray[100];
-  int i = 0;
-  while(client.available() > 0){
-    inputCharArray[i] = client.read();
-    i++;
-  }
-  inputString = String(inputCharArray);
-  Serial.println(inputCharArray);
-  updateLED();
-  return input;
-}
-
 void procCmd(int cmd, int data1, int data2, int data3) {
   switch(cmd) {
   case CMD_OFF:
@@ -201,6 +197,30 @@ void procCmd(int cmd, int data1, int data2, int data3) {
       }
     }
     break;
+  }
+}
+
+//Communication:
+String communicate() {
+  char inputCharArray[100];
+  int i = 0;
+  while(client.available() > 0){
+    inputCharArray[i] = client.read();
+    i++;
+  }
+  inputString = String(inputCharArray);
+  updateLED();
+  return inputString;
+}
+
+//States:
+
+void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
+  for(uint16_t i = 0; i < LED_COUNT; i++) {
+    colors[i] = rgbColor(0, 0, 0);
+  }
+  for(uint16_t i = startPosition; i < endPosition; i++) {
+    colors[i] = rgbcolor;
   }
 }
 
@@ -286,14 +306,7 @@ void loading() {
   delay(20);
 }
 
-void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(0, 0, 0);
-  }
-  for(uint16_t i = startPosition; i < endPosition; i++) {
-    colors[i] = rgbcolor;
-  }
-}
+//LED Management
 
 void updateLED() {
   ledStrip.write(colors, LED_COUNT);
@@ -343,10 +356,12 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b                                                                                       };
+    r, g, b                                                                                           };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                                                                                              };
+    r, g, b                                                                                                  };
 }
+
+
