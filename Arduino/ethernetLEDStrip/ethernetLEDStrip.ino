@@ -85,15 +85,24 @@ float gradChange2[3] = {
 int progress = 0;
 
 //Bounce stuff:
-int bouncePositions[4] = {
-  5, 5, 5, 5};
+int bouncePositions[3] = {
+  5, 25, 50};
 //False = closer, true = further
-boolean bounceDirections[4] = {
-  true, true, false, false};
-  
-  rgb_color bounceColors[4] = {
-    (rgb_color){255,0,0},(rgb_color){0,0,255},(rgb_color){0,255,0},(rgb_color){255,255,255}
-  };
+boolean bounceDirections[3] = {
+  true, false, false};
+boolean bounceChanged[3] = {
+  false, false, false};
+
+rgb_color bounceColors[3] = {
+  (rgb_color){
+    255,0,0              }
+  ,(rgb_color){
+    0,0,255              }
+  ,
+  (rgb_color){
+    0,255,0  
+  }
+};
 
 void setup() {
   for(uint16_t i = 0; i < LED_COUNT; i++) {
@@ -324,22 +333,21 @@ void loading() {
 }
 
 void bounce(){
-  Serial.println("movement");
   for(int i = 0; i < sizeof(bouncePositions)/sizeof(int); i++)
   {
     colors[bouncePositions[i]] = bounceColors[i];
   }
   for(int i = 0; i < sizeof(bouncePositions)/sizeof(int); i++)
   {
-    if((bouncePositions[i] - 1) >= LED_COUNT)
+    if((bouncePositions[i]) > LED_COUNT)
     {
-      bouncePositions[i] = 0;
+      bouncePositions[i] = 1;
     }
-    if(bouncePositions[i] < 0)
+    if(bouncePositions[i] < 1)
     {
       bouncePositions[i] = LED_COUNT;
     }
-    
+
     if(bounceDirections[i])
     {
       bouncePositions[i]++;
@@ -347,21 +355,44 @@ void bounce(){
     else{
       bouncePositions[i]--;
     }
-    
+
     for(int j = 0; j < sizeof(bouncePositions)/sizeof(int); j++)
     {
       if(i != j){
-      if(bouncePositions[i] == bouncePositions[j])
-      {
-        bounceDirections[i] = !bounceDirections[i];
-      }
+        if(bounceChanged[j] == false)
+        {
+          if(bouncePositions[i] == bouncePositions[j] || (bouncePositions[i] == LED_COUNT && bouncePositions[j] == 1) || (bouncePositions[i] == 1 && bouncePositions[j] == LED_COUNT))
+          {
+            bounceDirections[i] = !bounceDirections[i];
+            bounceChanged[i] = true;
+            bounceChanged[j] = true;
+          }
+        }
       }
     }
-    Serial.print(i);
-    Serial.print(" ");
-    Serial.println(bouncePositions[i]);
+
+    if(bounceChanged[i] == true)
+    {
+
+      if(bounceDirections[i])
+      {
+        bouncePositions[i]++;
+      }
+      else{
+        bouncePositions[i]--;
+      }
+      bounceChanged[i] = false;
+      if((bouncePositions[i] - 1) >= LED_COUNT)
+      {
+        bouncePositions[i] = 0;
+      }
+      if(bouncePositions[i] < 0)
+      {
+        bouncePositions[i] = LED_COUNT;
+      }
+    }
   }
-  delay(20);
+  delay(2);
 }
 
 //LED Management
@@ -414,13 +445,20 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v) {
     break;
   }
   return (rgb_color) { 
-    r, g, b                                                                                               };
+    r, g, b                                                                                                             };
 }
 
 rgb_color rgbColor(uint16_t r, uint16_t g, uint16_t b) {
   return (rgb_color) {
-    r, g, b                                                                                                      };
+    r, g, b                                                                                                                    };
 }
+
+
+
+
+
+
+
 
 
 
