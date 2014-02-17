@@ -44,7 +44,7 @@ String delimiter4 = "+";
 String inputString;
 
 //State stuff:
-String state = "inoutbounce";
+String state = "lrbounce";
 rgb_color color = rgbColor(255,255,255);
 
 //Moving pattern stuff:
@@ -94,6 +94,7 @@ void setup() {
 }
 
 void loop() {
+  colors = blank;
   client = server.available();
   if (client) {
     String inputString = communicate();
@@ -184,7 +185,7 @@ void procCmd(int cmd, int data1, int data2, int data3) {
         else{
           if(data1 == PTRN_INOUTBOUNCE)
           {
-            state = "intoutbounce";
+            state = "inoutbounce";
           }
           else{
             if(data1 == PTRN_LOADING)
@@ -216,9 +217,6 @@ String communicate() {
 //States:
 
 void setLED(int startPosition, int endPosition, rgb_color rgbcolor) {
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(0, 0, 0);
-  }
   for(uint16_t i = startPosition; i < endPosition; i++) {
     colors[i] = rgbcolor;
   }
@@ -236,9 +234,6 @@ void rainbow()
 
 void gradient()
 {
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(0, 0, 0);
-  }
   for(uint16_t i = startPosition; i < endPosition; i++) {
     if(i < LED_COUNT) {
       if(i < endPosition / 2) {
@@ -253,9 +248,6 @@ void gradient()
 
 void leftRightBounce()
 {
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(0, 0, 0);
-  }
   for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
     colors[i] = rgbColor(255,255,255);
   }
@@ -274,13 +266,12 @@ void leftRightBounce()
   else  {
     bouncePosition--;
   }
+  //delay((-((bouncePosition-(LED_COUNT/2))*(bouncePosition-(LED_COUNT/2)))/50)+18);
+  //delay((-((bouncePosition-(LED_COUNT)/2-(30-length)))*(bouncePosition))/18);
   delay(20);
 }
 
 void inOutBounce() {
-  for(uint16_t i = 0; i < LED_COUNT; i++) {
-    colors[i] = rgbColor(0, 0, 0);
-  }
   for(uint16_t i = bouncePosition; i < (length+bouncePosition); i++) {
     colors[i] = rgbColor(255,255,255);
     if(i >= 60){
