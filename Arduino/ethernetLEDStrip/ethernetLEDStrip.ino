@@ -115,6 +115,9 @@ void setup() {
 
   Serial.println("Listening for clients");
 
+  digitalWrite(3, HIGH);
+
+  
   delay(10);
 }
 
@@ -392,7 +395,7 @@ void bounce(){
       }
     }
   }
-  delay(2);
+  delay(20);
 }
 
 //LED Management
